@@ -1,6 +1,8 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 
+import { authToken } from "@/lib/authToken";
+
 /** Backend base URL — overridable via `VITE_API_BASE_URL`. */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 const API_V1 = `${API_BASE_URL}/api/v1`;
@@ -24,8 +26,10 @@ function isApiError(data: unknown): data is { error: ApiError } {
 
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: API_V1,
+  credentials: "include", // send the httpOnly refresh cookie to /auth/refresh
   prepareHeaders: (headers) => {
-    const token = localStorage.getItem("sp.access_token");
+    // Access token is held in memory only (see lib/authToken) — never in web storage.
+    const token = authToken.get();
     if (token) headers.set("Authorization", `Bearer ${token}`);
     return headers;
   },
