@@ -26,8 +26,12 @@ export const errorMiddleware: Middleware = () => (next) => (action) => {
       authToken.clear();
     }
 
-    // Silent for the bootstrap refresh call — no session yet is expected.
-    const isBootstrapRefresh = typeof action.type === "string" && action.type.includes("refresh");
+    // Silent for the bootstrap refresh call — it runs on every load to probe for an
+    // existing session, so a 401 there just means "not signed in yet". RTK Query puts
+    // the endpoint name on `meta.arg`, not in the action type.
+    const endpointName = (action.meta as { arg?: { endpointName?: string } } | undefined)?.arg
+      ?.endpointName;
+    const isBootstrapRefresh = endpointName === "refresh";
 
     if (apiError && !(payload.status === 401 && isBootstrapRefresh)) {
       showApiError(apiError);
