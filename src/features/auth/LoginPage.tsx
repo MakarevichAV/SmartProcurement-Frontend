@@ -1,17 +1,17 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 
-import { useLoginMutation, useMeQuery } from "@/api/authApi";
+import { useLoginMutation } from "@/api/authApi";
 
 export function LoginPage() {
   const [email, setEmail] = useState("admin@example.com");
   const [password, setPassword] = useState("");
   const [login, { isLoading }] = useLoginMutation();
-  // Kick off /me automatically once a token exists (skip until then).
-  useMeQuery(undefined, { skip: false });
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    // On success, authApi triggers /me which flips auth.status → the ProtectedRoute
+    // swaps this screen for the app shell. Errors surface as a toast.
     await login({ email, password })
       .unwrap()
       .catch(() => undefined);
