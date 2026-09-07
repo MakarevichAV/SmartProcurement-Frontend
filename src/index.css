@@ -1,1 +1,217 @@
 @import "tailwindcss";
+
+/*
+ * Smart Procurement — visual foundation
+ * -------------------------------------
+ * Semantic design tokens live as CSS custom properties so they can be re-themed
+ * (light / dark) without touching component classes. Tailwind utilities are wired
+ * to these vars through `@theme inline` below, so `bg-surface`, `text-ink`,
+ * `border-line`, `text-brand`, `font-mono`, etc. all resolve to the active theme.
+ *
+ * Colour is meaning, not decoration:
+ *   brand (green)   -> primary action, active state, "allow" / live
+ *   warning (amber) -> needs a human, "ask"
+ *   danger  (red)   -> blocked, failed, "deny"
+ */
+
+:root {
+  /* Surfaces */
+  --canvas: #f7f8fa;
+  --surface: #ffffff;
+  --surface-muted: #f1f3f6;
+  --surface-sunken: #eef1f5;
+
+  /* Text */
+  --ink: #0b1f33;
+  --ink-muted: #55677a;
+  --ink-subtle: #7c8b9f;
+  --ink-on-navy: #f4f7fa;
+  --ink-on-brand: #04231a;
+
+  /* Lines */
+  --line: #e2e7ee;
+  --line-strong: #cfd7e1;
+
+  /* Brand — navy structural frame */
+  --navy: #071d32;
+  --navy-raised: #0d2a44;
+  --navy-hover: #123551;
+  --navy-line: #1c3a56;
+
+  /* Brand — green accent (rationed) */
+  --brand: #10b981;
+  --brand-strong: #059669;
+  --brand-pressed: #047857;
+  --brand-soft: #e7f8f1;
+  --brand-soft-line: #b6e6d3;
+
+  /* Semantic */
+  --warning: #b45309;
+  --warning-soft: #fdf1e3;
+  --warning-soft-line: #f0d6b3;
+  --danger: #c4322b;
+  --danger-strong: #a5271f;
+  --danger-soft: #fbeceb;
+  --danger-soft-line: #f0c9c6;
+  --info: #1f5fb0;
+  --info-soft: #eaf1fa;
+  --info-soft-line: #c3d8f0;
+
+  /* Focus */
+  --focus-ring: #10b981;
+
+  /* Elevation — used sparingly */
+  --shadow-panel: 0 1px 2px rgba(7, 29, 50, 0.06), 0 1px 3px rgba(7, 29, 50, 0.04);
+  --shadow-overlay: 0 12px 32px -8px rgba(7, 29, 50, 0.22), 0 4px 12px -4px rgba(7, 29, 50, 0.14);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --canvas: #0d1321;
+    --surface: #121a2b;
+    --surface-muted: #172236;
+    --surface-sunken: #0f1725;
+
+    --ink: #e7ecf3;
+    --ink-muted: #9aa9bd;
+    --ink-subtle: #6f8098;
+    --ink-on-navy: #f4f7fa;
+    --ink-on-brand: #04231a;
+
+    --line: #223049;
+    --line-strong: #2d3f5c;
+
+    --navy: #091829;
+    --navy-raised: #10233a;
+    --navy-hover: #16304b;
+    --navy-line: #223a58;
+
+    --brand: #17c78d;
+    --brand-strong: #12b37f;
+    --brand-pressed: #0e9a6d;
+    --brand-soft: #0f2b26;
+    --brand-soft-line: #1d4a3f;
+
+    --warning: #e0913f;
+    --warning-soft: #2c2214;
+    --warning-soft-line: #4a3a20;
+    --danger: #e8756c;
+    --danger-strong: #f0958d;
+    --danger-soft: #2c1a18;
+    --danger-soft-line: #4d2b27;
+    --info: #6ba6e6;
+    --info-soft: #15243a;
+    --info-soft-line: #2a466c;
+
+    --focus-ring: #17c78d;
+
+    --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-overlay: 0 12px 32px -8px rgba(0, 0, 0, 0.55), 0 4px 12px -4px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-sunken: var(--surface-sunken);
+
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-ink-on-navy: var(--ink-on-navy);
+  --color-ink-on-brand: var(--ink-on-brand);
+
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-navy: var(--navy);
+  --color-navy-raised: var(--navy-raised);
+  --color-navy-hover: var(--navy-hover);
+  --color-navy-line: var(--navy-line);
+
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-pressed: var(--brand-pressed);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-soft-line: var(--brand-soft-line);
+
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-soft-line: var(--warning-soft-line);
+  --color-danger: var(--danger);
+  --color-danger-strong: var(--danger-strong);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-soft-line: var(--danger-soft-line);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-info-soft-line: var(--info-soft-line);
+
+  --font-sans:
+    "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
+
+@layer base {
+  * {
+    border-color: var(--line);
+  }
+
+  html {
+    color-scheme: light dark;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    color: var(--ink);
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  /* Consistent, visible keyboard focus on every interactive element. */
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--brand) 26%, transparent);
+    color: var(--ink);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

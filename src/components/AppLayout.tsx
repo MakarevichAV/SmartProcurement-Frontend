@@ -1,57 +1,48 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 
-import { useLogoutMutation } from "@/api/authApi";
-import { useAppSelector } from "@/app/hooks";
+import { Header } from "@/components/Header";
+import { Sidebar } from "@/components/Sidebar";
 import { ToastHost } from "@/components/ToastHost";
 
-const NAV = [
-  ["/", "Dashboard"],
-  ["/risks", "Risks / Recommendations"],
-  ["/approvals", "Approvals"],
-  ["/policies", "Autopilot / Policies"],
-  ["/capabilities", "Capabilities"],
-  ["/data-sources", "Data Sources"],
-  ["/executions", "Executions / Orders"],
-  ["/audit", "Audit"],
-  ["/users", "Users & Roles"],
-] as const;
-
+/**
+ * Authenticated application shell: navy navigation rail, top header, and a
+ * max-width workspace. The sidebar is persistent from `lg` up and an overlay
+ * drawer below it.
+ */
 export function AppLayout() {
-  const me = useAppSelector((s) => s.auth.me);
-  const [logout] = useLogoutMutation();
+  const [navOpen, setNavOpen] = useState(false);
+  const { pathname } = useLocation();
+
+  // Close the mobile drawer on navigation and on Escape.
+  useEffect(() => {
+    setNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setNavOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [navOpen]);
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      <header className="flex items-center justify-between border-b px-4 py-2">
-        <span className="font-semibold">Smart Procurement</span>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-gray-500">
-            {me ? `${me.full_name} · ${me.roles.join(", ")}` : ""}
-          </span>
-          <button className="rounded border px-2 py-1" onClick={() => logout()}>
-            Sign out
-          </button>
+    <div className="min-h-screen bg-canvas text-ink">
+      <div className="flex min-h-screen">
+        <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
+
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Header onOpenNav={() => setNavOpen(true)} />
+          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+            <div className="mx-auto w-full max-w-[1180px]">
+              <Outlet />
+            </div>
+          </main>
         </div>
-      </header>
-      <div className="flex">
-        <nav className="w-56 shrink-0 border-r p-3 text-sm">
-          {NAV.map(([to, label]) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === "/"}
-              className={({ isActive }) =>
-                `block rounded px-2 py-1 ${isActive ? "bg-gray-900 text-white" : "hover:bg-gray-100"}`
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-        <main className="flex-1 p-4">
-          <Outlet />
-        </main>
       </div>
+
       <ToastHost />
     </div>
   );

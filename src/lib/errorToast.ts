@@ -7,8 +7,11 @@
  */
 import type { ApiError } from "@/api/baseApi";
 
+export type ToastTone = "error" | "info" | "success";
+
 export interface Toast {
   id: number;
+  tone: ToastTone;
   code: string;
   message: string;
   correlationId?: string;
@@ -44,9 +47,14 @@ export function pushToast(t: Omit<Toast, "id">): void {
 }
 
 export function showApiError(err: ApiError): void {
-  pushToast({ code: err.code, message: err.message, correlationId: err.correlation_id });
+  pushToast({
+    tone: "error",
+    code: err.code,
+    message: err.message,
+    correlationId: err.correlation_id,
+  });
 }
 
-export function showMessage(message: string): void {
-  pushToast({ code: "info", message });
+export function showMessage(message: string, tone: ToastTone = "info"): void {
+  pushToast({ tone, code: tone, message });
 }
