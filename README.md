@@ -13,6 +13,10 @@ Spec, plan and contracts live in the top-level **SmartProcurement** repository
 React 18 · TypeScript · Vite 5 · Redux Toolkit + RTK Query · Tailwind CSS v4 ·
 ESLint (flat config) + Prettier · `openapi-typescript` for generated API types.
 
+Visual foundation: semantic design tokens as CSS custom properties (light + dark, wired to
+Tailwind via `@theme inline`) and IBM Plex Sans / IBM Plex Mono loaded from Google Fonts. No
+component or icon library — the UI primitives and icon set are in-repo.
+
 ## Local setup
 
 Prerequisites: Node 20+ (developed against Node 24). The backend must be running for anything
@@ -57,26 +61,50 @@ stays same-site with the backend and the refresh cookie is sent.
 - **Sign out** calls `/auth/logout` (revokes the refresh token, clears the cookie) and resets
   the client cache.
 - A `401` from any call clears the in-memory token; backend errors are shown as toasts using
-  the backend's unified error model.
+  the backend's unified error model. The silent session probe on load is exempt — a `401`
+  there just means "not signed in yet" and stays quiet.
 
-## Current UI (Phase 2)
+## Current UI (Phase 2, redesigned)
 
-Implemented:
+Phase 2 delivers the authenticated shell only; it has since had a UI/design pass that
+established a reusable visual foundation and reshaped the existing screens into a calm
+enterprise interface. **No business functionality and no Phase 3 work.**
 
-- **Login** screen.
-- **Authenticated app shell**: a header showing the signed-in user's name and role(s) and a
-  **Sign out** button.
-- **Navigation** for the nine product areas: Dashboard, Risks / Recommendations, Approvals,
-  Autopilot / Policies, Capabilities, Data Sources, Executions / Orders, Audit, Users & Roles.
-- Protected routing (loading → login → shell) and a toast host for API errors.
+Visual foundation:
+
+- **Design tokens** in `src/index.css` — navy structural frame, a rationed green accent, and
+  semantic amber/red mirroring LORM's `allow | ask | deny`. Full dark-mode token set,
+  activated by `prefers-color-scheme` (no app state). Global `:focus-visible` ring and
+  `prefers-reduced-motion` handling.
+- **Reusable primitives** in `src/components/ui/` — Button, TextField, Card, Badge, Alert,
+  Spinner, Skeleton, EmptyState, PageHeader / SectionHeader, StatTile, Table set, a
+  hand-rolled geometric icon set, and a `cn()` class joiner. `src/components/brand/` holds
+  the "SP" monogram (LogoMark / LogoLockup).
+
+Screens:
+
+- **Login** — navy split-screen brand panel + form; `type="email"` / `required` fields and an
+  inline error alert. The auth flow itself is unchanged.
+- **Authenticated app shell** (`AppLayout`) — navy sidebar, sticky header, max-width
+  workspace. **Responsive**: the sidebar is a persistent rail from the `lg` breakpoint and an
+  overlay drawer below it, closing on navigation, `Escape`, or a scrim click.
+- **Sidebar** — the nine nav targets grouped by the constitution's operational layers, with a
+  green active-edge indicator and hover / active / focus states.
+- **Header** — current section title, an initials avatar, the signed-in user's name and role
+  label(s), and **Sign out**.
+- **Dashboard shell** (`src/features/dashboard/`) — page header, four stat tiles rendering
+  `—` placeholders, and an empty "Recent activity" panel. Structure only; no data until
+  Phase 3.
+- Protected routing (session-restore splash → login → shell) and a toast host for API errors.
 - The generated API-types workflow (`npm run gen:api` → `src/api/schema.d.ts`, git-ignored and
   regenerated on demand).
 
-**The business screens are intentionally placeholders.** Every navigation target currently
-renders a "coming in a later phase" placeholder. The real screens (data-source onboarding,
-risk/recommendation views, approval queue, policy editor, capability management, executions,
-audit trail, user administration) are built in their corresponding phases —
-see `specs/001-smart-procurement/tasks.md`.
+**Every business screen is an intentional placeholder.** Each non-dashboard nav target
+(Risks & recommendations, Approvals, Policies, Capabilities, Data sources, Executions, Audit,
+Users & roles) renders a "Planned for a later phase" page; the dashboard is a data-less
+shell. The real screens (data-source onboarding, risk/recommendation views, approval queue,
+policy editor, capability management, executions, audit trail, user administration) are built
+in their corresponding phases — see `specs/001-smart-procurement/tasks.md`.
 
 ## Project layout
 
@@ -84,7 +112,10 @@ see `specs/001-smart-procurement/tasks.md`.
 src/
 ├── app/         store, router, typed hooks
 ├── api/         baseApi (RTK Query) + authApi; generated schema.d.ts (git-ignored)
-├── features/    auth/ (login, bootstrap, slice); business features land here per phase
-├── components/  AppLayout, ProtectedRoute, ToastHost, Placeholder
-└── lib/         authToken (in-memory), errorToast, errorMiddleware
+├── features/    auth/ (login, bootstrap, slice); dashboard/ (dashboard shell);
+│                other business features land here per phase
+├── components/  AppLayout, Header, Sidebar, ProtectedRoute, ToastHost, Placeholder,
+│                nav (nav config); brand/ (SP monogram); ui/ (design-system primitives)
+├── index.css    design tokens (light + dark) + Tailwind wiring
+└── lib/         authToken (in-memory), cn (class joiner), errorToast, errorMiddleware
 ```
