@@ -52,6 +52,13 @@ export interface MappingChangeEvent {
   at: string;
 }
 
+export interface BulkConfirmResult {
+  data_source_id: string;
+  requested: string[];
+  confirmed: string[];
+  failed: { mapping_id: string; reason: string }[];
+}
+
 export interface HealthHistory {
   health: SourceHealth;
   last_check_at: string | null;
@@ -151,6 +158,19 @@ export const dataSourcesApi = baseApi.injectEndpoints({
         { type: "Mapping", id: `SRC-${dataSourceId}` },
       ],
     }),
+    bulkConfirmMappings: build.mutation<
+      BulkConfirmResult,
+      { dataSourceId: string; mappingIds: string[] }
+    >({
+      query: ({ dataSourceId, mappingIds }) => ({
+        url: "/mappings/bulk-confirm",
+        method: "POST",
+        body: { data_source_id: dataSourceId, mapping_ids: mappingIds },
+      }),
+      invalidatesTags: (_r, _e, { dataSourceId }) => [
+        { type: "Mapping", id: `SRC-${dataSourceId}` },
+      ],
+    }),
     rejectMapping: build.mutation<FieldMapping, { id: string; dataSourceId: string }>({
       query: ({ id }) => ({ url: `/mappings/${id}/reject`, method: "POST" }),
       invalidatesTags: (_r, _e, { dataSourceId }) => [
@@ -199,6 +219,7 @@ export const {
   useListMappingsQuery,
   useCreateMappingMutation,
   useConfirmMappingMutation,
+  useBulkConfirmMappingsMutation,
   useRejectMappingMutation,
   useRetireMappingMutation,
   useEditMappingMutation,

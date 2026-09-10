@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import {
+  useBulkConfirmMappingsMutation,
   useConfirmMappingMutation,
   useCreateMappingMutation,
   useEditMappingMutation,
@@ -26,10 +27,10 @@ function confidence(v: number | null): string {
 }
 
 /**
- * Confirms every mapping that is `suggested` at click time, one at a time, via the same
- * `confirm` endpoint the per-row button uses. Confirmed / rejected / retired mappings are
- * never touched. Failures are counted, not fatal: the list refetch shows them as still
- * `suggested`, and a summary error is raised — they are never presented as confirmed.
+ * Confirms every mapping that is `suggested` at click time in a single bulk request. The
+ * backend only touches rows belonging to this source that are still `suggested`; anything
+ * ineligible comes back in `failed` and is never presented as confirmed. The list refetch
+ * (via `invalidatesTags`) updates the rows and the "X confirmed of Y" counter.
  */
 function BulkConfirmButton({
   dataSourceId,
@@ -38,31 +39,28 @@ function BulkConfirmButton({
   dataSourceId: string;
   suggested: FieldMapping[];
 }) {
-  const [confirm] = useConfirmMappingMutation();
-  const [progress, setProgress] = useState<{ processed: number; total: number } | null>(null);
+  const [bulkConfirm, { isLoading }] = useBulkConfirmMappingsMutation();
 
   async function confirmAll() {
-    const targets = suggested; // snapshot — later refetches must not add/skip work
-    setProgress({ processed: 0, total: targets.length });
-    let ok = 0;
-    let failed = 0;
-    for (const m of targets) {
-      try {
-        await confirm({ id: m.id, dataSourceId }).unwrap();
-        ok += 1;
-      } catch {
-        failed += 1;
+    try {
+      const res = await bulkConfirm({
+        dataSourceId,
+        mappingIds: suggested.map((m) => m.id),
+      }).unwrap();
+      if (res.failed.length === 0) {
+        showMessage(
+          `Confirmed ${res.confirmed.length} mapping${res.confirmed.length === 1 ? "" : "s"}`,
+          "success",
+        );
+      } else {
+        showMessage(
+          `Confirmed ${res.confirmed.length} of ${res.requested.length} — ` +
+            `${res.failed.length} could not be confirmed and are still shown as suggested`,
+          "error",
+        );
       }
-      setProgress({ processed: ok + failed, total: targets.length });
-    }
-    setProgress(null);
-    if (failed === 0) {
-      showMessage(`Confirmed ${ok} mapping${ok === 1 ? "" : "s"}`, "success");
-    } else {
-      showMessage(
-        `Confirmed ${ok} of ${targets.length} — ${failed} failed and are still shown as suggested`,
-        "error",
-      );
+    } catch {
+      /* request-level failure is surfaced by the global error toast */
     }
   }
 
@@ -71,12 +69,10 @@ function BulkConfirmButton({
       size="sm"
       variant="secondary"
       onClick={confirmAll}
-      loading={progress !== null}
-      disabled={progress !== null}
+      loading={isLoading}
+      disabled={isLoading}
     >
-      {progress
-        ? `Confirming… (${progress.processed}/${progress.total})`
-        : `Confirm all suggested (${suggested.length})`}
+      {isLoading ? "Confirming…" : `Confirm all suggested (${suggested.length})`}
     </Button>
   );
 }
