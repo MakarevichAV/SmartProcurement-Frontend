@@ -98,7 +98,7 @@ export function Sidebar({ open, onClose }: { open: boolean; onClose: () => void 
         </nav>
 
         <div className="border-t border-navy-line px-5 py-3">
-          <p className="font-mono text-[11px] text-white/35">Phase 2 shell</p>
+          <p className="font-mono text-[11px] text-white/35">Smart Procurement</p>
         </div>
       </aside>
     </>
