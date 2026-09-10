@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Select } from "@/components/ui/Select";
 import { TextField } from "@/components/ui/TextField";
 import { Table, TableWrap, Tbody, Td, Th, Thead, Tr } from "@/components/ui/Table";
+import { showMessage } from "@/lib/errorToast";
 import { MappingStatusBadge } from "@/lib/statusBadges";
 import { CANONICAL_ENTITIES } from "@/features/datasources/constants";
 
@@ -22,6 +23,62 @@ const ENTITY_OPTS = CANONICAL_ENTITIES.map((e) => ({ value: e, label: e }));
 
 function confidence(v: number | null): string {
   return v === null ? "—" : `${Math.round(v * 100)}%`;
+}
+
+/**
+ * Confirms every mapping that is `suggested` at click time, one at a time, via the same
+ * `confirm` endpoint the per-row button uses. Confirmed / rejected / retired mappings are
+ * never touched. Failures are counted, not fatal: the list refetch shows them as still
+ * `suggested`, and a summary error is raised — they are never presented as confirmed.
+ */
+function BulkConfirmButton({
+  dataSourceId,
+  suggested,
+}: {
+  dataSourceId: string;
+  suggested: FieldMapping[];
+}) {
+  const [confirm] = useConfirmMappingMutation();
+  const [progress, setProgress] = useState<{ processed: number; total: number } | null>(null);
+
+  async function confirmAll() {
+    const targets = suggested; // snapshot — later refetches must not add/skip work
+    setProgress({ processed: 0, total: targets.length });
+    let ok = 0;
+    let failed = 0;
+    for (const m of targets) {
+      try {
+        await confirm({ id: m.id, dataSourceId }).unwrap();
+        ok += 1;
+      } catch {
+        failed += 1;
+      }
+      setProgress({ processed: ok + failed, total: targets.length });
+    }
+    setProgress(null);
+    if (failed === 0) {
+      showMessage(`Confirmed ${ok} mapping${ok === 1 ? "" : "s"}`, "success");
+    } else {
+      showMessage(
+        `Confirmed ${ok} of ${targets.length} — ${failed} failed and are still shown as suggested`,
+        "error",
+      );
+    }
+  }
+
+  return (
+    <Button
+      size="sm"
+      variant="secondary"
+      onClick={confirmAll}
+      loading={progress !== null}
+      disabled={progress !== null}
+    >
+      {progress
+        ? `Confirming… (${progress.processed}/${progress.total})`
+        : `Confirm all suggested (${suggested.length})`}
+    </Button>
+  );
 }
 
 function MappingRow({ m, dataSourceId }: { m: FieldMapping; dataSourceId: string }) {
@@ -218,6 +275,7 @@ export function MappingReview({
   const { data, isLoading } = useListMappingsQuery(dataSourceId);
   const mappings = data?.items ?? [];
   const confirmedCount = mappings.filter((m) => m.status === "confirmed").length;
+  const suggested = mappings.filter((m) => m.status === "suggested");
 
   return (
     <Card>
@@ -227,6 +285,11 @@ export function MappingReview({
           mappings.length
             ? `${confirmedCount} confirmed of ${mappings.length}. Only confirmed mappings are used when syncing.`
             : "AI proposes mappings; you confirm each one. Nothing is applied automatically."
+        }
+        actions={
+          suggested.length > 0 ? (
+            <BulkConfirmButton dataSourceId={dataSourceId} suggested={suggested} />
+          ) : undefined
         }
       />
       <CardBody className="space-y-4">
