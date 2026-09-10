@@ -19,8 +19,34 @@ export interface DomainMap {
   relationships: DomainRelationship[];
 }
 
+/** A resolved foreign-key reference (business label + raw id + natural-key fields). */
+export interface DomainReference {
+  entity: string;
+  id: string;
+  label: string;
+  sku?: string;
+  code?: string;
+  name?: string;
+}
+
+/** Where a canonical row came from — the data source, its contributing fields, freshness. */
+export interface DomainProvenance {
+  data_source_id: string | null;
+  data_source_name: string | null;
+  source_fields: string[];
+  fetched_at: string | null;
+}
+
+export interface DomainRow extends Record<string, unknown> {
+  id?: string;
+  observability?: string;
+  references?: Record<string, DomainReference>;
+  provenance?: DomainProvenance;
+  source_provenance?: Record<string, unknown>;
+}
+
 export interface DomainRows {
-  items: Record<string, unknown>[];
+  items: DomainRow[];
   next_cursor: string | null;
 }
 
