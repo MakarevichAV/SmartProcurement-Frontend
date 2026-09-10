@@ -7,6 +7,8 @@ export type { ButtonProps } from "@/components/ui/Button";
 export { Card, CardBody, CardFooter, CardHeader } from "@/components/ui/Card";
 export { EmptyState } from "@/components/ui/EmptyState";
 export { PageHeader, SectionHeader } from "@/components/ui/PageHeader";
+export { Select } from "@/components/ui/Select";
+export type { SelectOption, SelectProps } from "@/components/ui/Select";
 export { Skeleton, SkeletonText } from "@/components/ui/Skeleton";
 export { Spinner } from "@/components/ui/Spinner";
 export { StatTile } from "@/components/ui/StatTile";

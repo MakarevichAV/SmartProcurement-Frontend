@@ -99,6 +99,14 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: IconDataSources,
       },
       {
+        path: "/domain",
+        label: "Domain map",
+        title: "Domain map",
+        description:
+          "The canonical L0 view of what exists — items, suppliers, warehouses — with per-entity provenance and observability.",
+        icon: IconDataSources,
+      },
+      {
         path: "/executions",
         label: "Executions",
         title: "Executions & orders",

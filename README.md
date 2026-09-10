@@ -64,11 +64,12 @@ stays same-site with the backend and the refresh cookie is sent.
   the backend's unified error model. The silent session probe on load is exempt — a `401`
   there just means "not signed in yet" and stays quiet.
 
-## Current UI (Phase 2, redesigned)
+## Current UI (Phase 2 shell + Phase 3 / US1)
 
-Phase 2 delivers the authenticated shell only; it has since had a UI/design pass that
-established a reusable visual foundation and reshaped the existing screens into a calm
-enterprise interface. **No business functionality and no Phase 3 work.**
+Phase 2 delivered the authenticated shell and a UI/design pass that established a reusable
+visual foundation. **Phase 3 / User Story 1** then added the first two working business
+screens — **Data sources** and **Domain map** — on top of that foundation (one new shared
+primitive, `Select`). Everything else remains an intentional placeholder.
 
 Visual foundation:
 
@@ -76,10 +77,10 @@ Visual foundation:
   semantic amber/red mirroring LORM's `allow | ask | deny`. Full dark-mode token set,
   activated by `prefers-color-scheme` (no app state). Global `:focus-visible` ring and
   `prefers-reduced-motion` handling.
-- **Reusable primitives** in `src/components/ui/` — Button, TextField, Card, Badge, Alert,
-  Spinner, Skeleton, EmptyState, PageHeader / SectionHeader, StatTile, Table set, a
-  hand-rolled geometric icon set, and a `cn()` class joiner. `src/components/brand/` holds
-  the "SP" monogram (LogoMark / LogoLockup).
+- **Reusable primitives** in `src/components/ui/` — Button, TextField, **Select**, Card,
+  Badge, Alert, Spinner, Skeleton, EmptyState, PageHeader / SectionHeader, StatTile, Table
+  set, a hand-rolled geometric icon set, and a `cn()` class joiner. `src/components/brand/`
+  holds the "SP" monogram (LogoMark / LogoLockup).
 
 Screens:
 
@@ -93,18 +94,28 @@ Screens:
 - **Header** — current section title, an initials avatar, the signed-in user's name and role
   label(s), and **Sign out**.
 - **Dashboard shell** (`src/features/dashboard/`) — page header, four stat tiles rendering
-  `—` placeholders, and an empty "Recent activity" panel. Structure only; no data until
-  Phase 3.
+  `—` placeholders, and an empty "Recent activity" panel. Structure only, no data yet.
 - Protected routing (session-restore splash → login → shell) and a toast host for API errors.
 - The generated API-types workflow (`npm run gen:api` → `src/api/schema.d.ts`, git-ignored and
   regenerated on demand).
 
-**Every business screen is an intentional placeholder.** Each non-dashboard nav target
-(Risks & recommendations, Approvals, Policies, Capabilities, Data sources, Executions, Audit,
-Users & roles) renders a "Planned for a later phase" page; the dashboard is a data-less
-shell. The real screens (data-source onboarding, risk/recommendation views, approval queue,
-policy editor, capability management, executions, audit trail, user administration) are built
-in their corresponding phases — see `specs/001-smart-procurement/tasks.md`.
+### US1 screens
+
+- **Data sources** (`src/features/datasources/`, `src/api/dataSourcesApi.ts`) — list with
+  health badges; a Connect form (file / REST / SQL, with client-side file read); a per-source
+  page that runs **Test connection**, **Introspect schema**, **Suggest mappings** and
+  **Upload file**; a **mapping-review table** with per-row Confirm / Edit / Reject / Retire
+  and an "add mapping by hand" form; an observability panel (current health + recorded gaps).
+- **Domain map** (`src/features/domain/`, `src/api/domainApi.ts`) — a grid of entity cards
+  (row count, `fresh` / `stale` / `lost` breakdown, source count), a relationship list, and
+  an entity-detail table showing each row's columns, observability badge and source
+  provenance. Empty states are honest ("no rows", "the domain map is empty — connect a
+  source").
+
+**Screens after US1 are still placeholders.** Each remaining nav target (Risks &
+recommendations, Approvals, Policies, Capabilities, Executions, Audit, Users & roles) renders
+a "Planned for a later phase" page; those are built in their corresponding phases — see
+`specs/001-smart-procurement/tasks.md`.
 
 ## Project layout
 
