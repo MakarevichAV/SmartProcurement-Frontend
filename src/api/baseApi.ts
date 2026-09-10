@@ -100,6 +100,7 @@ export const baseApi = createApi({
   tagTypes: [
     "Enterprise",
     "User",
+    "Dashboard",
     "DataSource",
     "Mapping",
     "DomainMap",
