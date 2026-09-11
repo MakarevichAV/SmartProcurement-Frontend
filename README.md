@@ -146,8 +146,9 @@ a "Planned for a later phase" page; those are built in their corresponding phase
 src/
 ├── app/         store, router, typed hooks
 ├── api/         baseApi (RTK Query) + authApi; generated schema.d.ts (git-ignored)
-├── features/    auth/ (login, bootstrap, slice); dashboard/ (dashboard shell);
-│                other business features land here per phase
+├── features/    auth/ (login, bootstrap, slice); dashboard/ (LORM L2-L5 + data-health read
+│                model); datasources/, domain/ (US1); other business features land here per
+│                phase
 ├── components/  AppLayout, Header, Sidebar, ProtectedRoute, ToastHost, Placeholder,
 │                nav (nav config); brand/ (SP monogram); ui/ (design-system primitives)
 ├── index.css    design tokens (light + dark) + Tailwind wiring
