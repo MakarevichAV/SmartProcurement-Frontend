@@ -58,18 +58,26 @@ stays same-site with the backend and the refresh cookie is sent.
   login screen.
 - After a successful login the app fetches `/me`, which flips the auth state and swaps the
   login screen for the authenticated shell.
+- **Silent re-auth on 401** — the shared `baseApi` base query also renews on demand: a `401`
+  from any non-`/auth/*` request (short-lived access token expired, or any transient 401)
+  triggers one `POST /api/v1/auth/refresh` (deduplicated across concurrent 401s), then retries
+  the original request once with the new access token. Only if that refresh itself fails does
+  the original 401 propagate — the in-memory token is cleared and the backend's unified error
+  model is shown as a toast. This is what keeps an action like confirming a field mapping from
+  failing with "missing bearer token" after the access token has quietly expired in the
+  background.
 - **Sign out** calls `/auth/logout` (revokes the refresh token, clears the cookie) and resets
   the client cache.
-- A `401` from any call clears the in-memory token; backend errors are shown as toasts using
-  the backend's unified error model. The silent session probe on load is exempt — a `401`
-  there just means "not signed in yet" and stays quiet.
+- The silent session probe on load is exempt from error toasts — a `401` there just means "not
+  signed in yet" and stays quiet.
 
-## Current UI (Phase 2 shell + Phase 3 / US1)
+## Current UI (authenticated shell + Phase 3 / US1)
 
 Phase 2 delivered the authenticated shell and a UI/design pass that established a reusable
-visual foundation. **Phase 3 / User Story 1** then added the first two working business
-screens — **Data sources** and **Domain map** — on top of that foundation (one new shared
-primitive, `Select`). Everything else remains an intentional placeholder.
+visual foundation. **Phase 3 / User Story 1** then added the first working business
+screens — **Data sources**, **Domain map**, and a data-backed **Dashboard** — on top of that
+foundation (one new shared primitive, `Select`). Everything else remains an intentional
+placeholder.
 
 Visual foundation:
 
@@ -92,9 +100,17 @@ Screens:
 - **Sidebar** — the nine nav targets grouped by the constitution's operational layers, with a
   green active-edge indicator and hover / active / focus states.
 - **Header** — current section title, an initials avatar, the signed-in user's name and role
-  label(s), and **Sign out**.
-- **Dashboard shell** (`src/features/dashboard/`) — page header, four stat tiles rendering
-  `—` placeholders, and an empty "Recent activity" panel. Structure only, no data yet.
+  label(s), and **Sign out**. The sidebar footer shows a neutral product label (no
+  development-phase text).
+- **Dashboard** (`src/features/dashboard/`, `src/api/dashboardApi.ts`) — reads
+  `GET /api/v1/dashboard`. Four stat tiles walk the LORM control flow **L2 → L3 → L4 → L5**
+  (Open risks / Recommendations / Approvals / Autopilot); the first three render `—` with an
+  "available when … is enabled" note until their subsystems land in US2/US3/US4 (the backend
+  sends `null`, not a fake `0`), while Autopilot shows the real count of capabilities at L5. A
+  **Data health** section below it shows connected-source counts by health, the latest
+  successful sync time, open observability gaps, and canonical-row freshness
+  (fresh/stale/lost) across all synced entities. A "Recent activity" panel stays an honest
+  empty state until executions/approvals/audit events exist.
 - Protected routing (session-restore splash → login → shell) and a toast host for API errors.
 - The generated API-types workflow (`npm run gen:api` → `src/api/schema.d.ts`, git-ignored and
   regenerated on demand).
@@ -104,12 +120,19 @@ Screens:
 - **Data sources** (`src/features/datasources/`, `src/api/dataSourcesApi.ts`) — list with
   health badges; a Connect form (file / REST / SQL, with client-side file read); a per-source
   page that runs **Test connection**, **Introspect schema**, **Suggest mappings** and
-  **Upload file**; a **mapping-review table** with per-row Confirm / Edit / Reject / Retire
-  and an "add mapping by hand" form; an observability panel (current health + recorded gaps).
+  **Upload file**; a **mapping-review table** with per-row Confirm / Edit / Reject / Retire,
+  a **"Confirm all suggested (N)"** bulk-confirm button (calls
+  `POST /mappings/bulk-confirm` once for every `suggested` row on the source; a partial
+  failure — e.g. a row confirmed by someone else moments earlier — is reported without
+  blocking the rest, and still-`suggested` rows stay visible as such), and an "add mapping by
+  hand" form; an observability panel (current health + recorded gaps).
 - **Domain map** (`src/features/domain/`, `src/api/domainApi.ts`) — a grid of entity cards
-  (row count, `fresh` / `stale` / `lost` breakdown, source count), a relationship list, and
-  an entity-detail table showing each row's columns, observability badge and source
-  provenance. Empty states are honest ("no rows", "the domain map is empty — connect a
+  (row count, `fresh` / `stale` / `lost` breakdown, source count), a relationship list, and a
+  **business-readable entity-detail table**: foreign keys render as a resolved label (e.g. an
+  `item_id` column shows "SKU-123 — Steel Bracket", not the raw UUID) using the backend's
+  `references` payload, alongside the row's remaining scalar columns, an observability badge,
+  and a **Source** column (data source name + the originating field path(s), from
+  `provenance`). Empty states are honest ("no rows", "the domain map is empty — connect a
   source").
 
 **Screens after US1 are still placeholders.** Each remaining nav target (Risks &
