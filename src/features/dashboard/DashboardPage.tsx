@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 import { useDashboardQuery } from "@/api/dashboardApi";
 import type { DashboardLorm } from "@/api/dashboardApi";
 import { useAppSelector } from "@/app/hooks";
@@ -68,19 +70,30 @@ export function DashboardPage() {
         {LORM_CARDS.map((c) => {
           const raw = lorm?.[c.key];
           const known = typeof raw === "number";
-          return (
-            <StatTile
-              key={c.key}
-              label={c.label}
-              value={isLoading ? "…" : known ? raw : "—"}
-              note={isLoading || known ? c.note : c.unavailable}
-              icon={
-                <Badge tone="neutral" mono>
-                  {c.level}
-                </Badge>
-              }
-            />
+          const value = isLoading ? "…" : known ? raw : "—";
+          const note = isLoading || known ? c.note : c.unavailable;
+          const icon = (
+            <Badge tone="neutral" mono>
+              {c.level}
+            </Badge>
           );
+
+          // Open risks is the one LORM metric with a real destination today (T076 builds it);
+          // the other three stay static until their own subsystem/screen lands.
+          if (c.key === "open_risks") {
+            return (
+              <Link key={c.key} to="/risks" className="block">
+                <StatTile
+                  label={c.label}
+                  value={value}
+                  note={note}
+                  icon={icon}
+                  className="h-full transition-colors hover:border-line-strong"
+                />
+              </Link>
+            );
+          }
+          return <StatTile key={c.key} label={c.label} value={value} note={note} icon={icon} />;
         })}
       </div>
 
@@ -94,7 +107,7 @@ export function DashboardPage() {
             {isLoading || !dh ? (
               <SkeletonText lines={3} />
             ) : (
-              <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-[13px] sm:grid-cols-4">
+              <dl className="grid grid-cols-2 gap-x-6 gap-y-4 text-[13px] sm:grid-cols-5">
                 <div>
                   <dt className="text-ink-subtle">Connected sources</dt>
                   <dd className="mt-1 text-[15px] font-semibold tabular-nums text-ink">
@@ -129,7 +142,13 @@ export function DashboardPage() {
                     {dh.open_observability_gaps}
                   </dd>
                 </div>
-                <div className="sm:col-span-4">
+                <div>
+                  <dt className="text-ink-subtle">AI-unavailable risk explanations</dt>
+                  <dd className="mt-1 text-[15px] font-semibold tabular-nums text-ink">
+                    {dh.ai_unavailable_items}
+                  </dd>
+                </div>
+                <div className="sm:col-span-5">
                   <dt className="text-ink-subtle">Canonical data freshness</dt>
                   <dd className="mt-1 flex flex-wrap items-center gap-1.5">
                     <Badge tone="success" dot>
