@@ -71,13 +71,16 @@ stays same-site with the backend and the refresh cookie is sent.
 - The silent session probe on load is exempt from error toasts — a `401` there just means "not
   signed in yet" and stays quiet.
 
-## Current UI (authenticated shell + Phase 3 / US1)
+## Current UI (authenticated shell + Phase 3/US1 + Phase 4/US2)
 
 Phase 2 delivered the authenticated shell and a UI/design pass that established a reusable
 visual foundation. **Phase 3 / User Story 1** then added the first working business
 screens — **Data sources**, **Domain map**, and a data-backed **Dashboard** — on top of that
-foundation (one new shared primitive, `Select`). Everything else remains an intentional
-placeholder.
+foundation (one new shared primitive, `Select`). **Phase 4 / User Story 2** added the real
+**Risks & recommendations** screen (list + detail, evidence, AI explanation, dismiss) and made
+the Dashboard's Open Risks and AI-unavailable counts real. Everything past US2 remains an
+intentional placeholder — no L3+ concept (recommendations, suppliers, quantities, approve,
+execute) exists in the UI yet.
 
 Visual foundation:
 
@@ -104,13 +107,15 @@ Screens:
   development-phase text).
 - **Dashboard** (`src/features/dashboard/`, `src/api/dashboardApi.ts`) — reads
   `GET /api/v1/dashboard`. Four stat tiles walk the LORM control flow **L2 → L3 → L4 → L5**
-  (Open risks / Recommendations / Approvals / Autopilot); the first three render `—` with an
-  "available when … is enabled" note until their subsystems land in US2/US3/US4 (the backend
-  sends `null`, not a fake `0`), while Autopilot shows the real count of capabilities at L5. A
-  **Data health** section below it shows connected-source counts by health, the latest
-  successful sync time, open observability gaps, and canonical-row freshness
-  (fresh/stale/lost) across all synced entities. A "Recent activity" panel stays an honest
-  empty state until executions/approvals/audit events exist.
+  (Open risks / Recommendations / Approvals / Autopilot). **Open risks** is a real count
+  (Phase 4) and links through to `/risks`; Recommendations and Approvals still render `—` with
+  an "available when … is enabled" note until US3/US4 land (the backend sends `null`, not a
+  fake `0`); Autopilot shows the real count of capabilities at L5. A **Data health** section
+  below it shows connected-source counts by health, the latest successful sync time, open
+  observability gaps, canonical-row freshness (fresh/stale/lost) across all synced entities,
+  and — since Phase 4 — the count of risk findings whose AI explanation is currently
+  unavailable. A "Recent activity" panel stays an honest empty state until executions/
+  approvals/audit events exist.
 - Protected routing (session-restore splash → login → shell) and a toast host for API errors.
 - The generated API-types workflow (`npm run gen:api` → `src/api/schema.d.ts`, git-ignored and
   regenerated on demand).
@@ -135,10 +140,24 @@ Screens:
   `provenance`). Empty states are honest ("no rows", "the domain map is empty — connect a
   source").
 
-**Screens after US1 are still placeholders.** Each remaining nav target (Risks &
-recommendations, Approvals, Policies, Capabilities, Executions, Audit, Users & roles) renders
-a "Planned for a later phase" page; those are built in their corresponding phases — see
-`specs/001-smart-procurement/tasks.md`.
+### US2 screen
+
+- **Risks & recommendations** (`src/features/risks/`, `src/api/risksApi.ts`) — a `/risks` list
+  (status / risk_type / item_id filters, cursor-stack prev/next pagination, human-readable
+  risk-type/severity/status/AI-status labels) and a `/risks/:id` detail page. Detection
+  (deterministic — T070) and AI Explanation are rendered as **clearly separate cards**; a
+  neutral "AI unavailable" alert never implies the finding itself is invalid. An Evidence
+  section renders per evidence kind: `observation_signal` payloads for most risk types, and
+  `domain_row`/`purchase_order` rows specifically for `systematic_supplier_delay`. Dismissal is
+  inline with a required, non-empty reason and an explicit confirm step, reusing the RTK Query
+  cache invalidation from `dashboardApi`/`risksApi` so the list, detail, and Dashboard tiles
+  stay in sync without a manual reload. The sidebar label stays "Risks & recommendations" as-is
+  — US3 adds recommendations to this same screen. **No L3+ concept** (recommend/approve/
+  execute/supplier/quantity) appears on this screen yet.
+
+**Screens after US2 are still placeholders.** Each remaining nav target (Approvals, Policies,
+Capabilities, Executions, Audit, Users & roles) renders a "Planned for a later phase" page;
+those are built in their corresponding phases — see `specs/001-smart-procurement/tasks.md`.
 
 ## Project layout
 
@@ -147,8 +166,8 @@ src/
 ├── app/         store, router, typed hooks
 ├── api/         baseApi (RTK Query) + authApi; generated schema.d.ts (git-ignored)
 ├── features/    auth/ (login, bootstrap, slice); dashboard/ (LORM L2-L5 + data-health read
-│                model); datasources/, domain/ (US1); other business features land here per
-│                phase
+│                model); datasources/, domain/ (US1); risks/ (US2 — list, detail, evidence,
+│                dismiss); other business features land here per phase
 ├── components/  AppLayout, Header, Sidebar, ProtectedRoute, ToastHost, Placeholder,
 │                nav (nav config); brand/ (SP monogram); ui/ (design-system primitives)
 ├── index.css    design tokens (light + dark) + Tailwind wiring
